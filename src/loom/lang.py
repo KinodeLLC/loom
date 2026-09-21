@@ -148,6 +148,8 @@ class LoomParser(Parser):
                        "the error case."])
 
         while True:
+            # Doc comments may sit between header clauses.
+            self.skip_docs()
             if self.cur.is_kw("intent"):
                 self.next()
                 w.intent = self.parse_text_literal("an intent description")
@@ -236,10 +238,19 @@ class LoomParser(Parser):
     def parse_step(self) -> StepDecl:
         start = self.next()           # step
         s = StepDecl()
-        # `step name = expr` binds; `step expr` does not.
+        # Three forms:
+        #   step name = expr   names the step and binds its value
+        #   step name: expr    names the step without binding anything
+        #   step expr          derives a name from the expression
+        # The middle form exists because a step's name matters -- it appears in
+        # every checkpoint and drives resumption -- while its value often does
+        # not, and forcing a binding nothing reads is just noise.
         if self.cur.kind == T.NAME and self.at(1).is_op("="):
             s.binding = self.next().value
             s.name = s.binding
+            self.next()
+        elif self.cur.kind == T.NAME and self.at(1).is_punct(":"):
+            s.name = self.next().value
             self.next()
         s.expr = self.parse_expr()
         if not s.name:
