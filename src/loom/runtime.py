@@ -1,15 +1,15 @@
 """
-Loom's runtime handlers.
+loom's runtime handlers.
 
-Loom generates calls to a `workflow` effect, so Loom supplies its handlers
-rather than the Ledger knowing anything about workflows. Installing them is a
-separate, explicit step: a Ledger with no workflow handlers will refuse the
-checkpoint rather than silently running a workflow with no durability.
+loom generates calls to a `workflow` effect so loom brings the handlers for it,
+the journal does not need to know anything about workflows. installing them is
+a separate step you do on purpose, and if you skip it you get an error on the
+first checkpoint instead of a workflow that looks like it is running and is not
+recording anything.
 
-The handlers themselves are deliberately thin. Checkpointing is just a
-journaled effect -- the Ledger's replay mode is what actually makes a workflow
-resumable, and adding state here would create a second source of truth that
-could disagree with the journal.
+the handlers are thin. a checkpoint is just a journaled effect and replay mode
+is what actually makes a workflow resumable, so putting state in here would
+give you a second source of truth that can disagree with the journal.
 """
 
 from __future__ import annotations

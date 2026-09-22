@@ -1,27 +1,25 @@
 """
-Loom: a durable workflow language.
+loom, a durable workflow language.
 
-A workflow is a sequence of steps, each of which may fail and each of which may
-declare how to undo itself. Loom's job is to make the two hard parts of that
-boring:
+a workflow is a run of steps, any of which can fail and any of which can say
+how to undo itself. the job here is making the two hard parts of that boring.
 
-  Compensation is written next to the step it undoes, not assembled by hand in
-  an error path far away. When a step fails, every completed step's
-  compensation runs in reverse order, and the compensations are emitted
-  explicitly rather than driven by a runtime stack -- so the unwinding is
-  visible in the generated code and in the journal, and can be inspected before
-  it ever runs.
+compensation gets written next to the step it undoes instead of assembled by
+hand in an error path somewhere else. when a step fails every completed step
+before it gets undone in reverse, and the undoing is written into the generated
+code rather than driven off a runtime stack, so you can see it in the code and
+in the journal and read it before it ever runs.
 
-  Durability is not a separate mechanism. Each step checkpoints to the effect
-  journal before it runs, so resuming a crashed workflow is the Ledger's
-  ordinary replay: completed steps return their recorded results without being
-  performed again, and execution continues from the first step that never
-  finished. There is no separate workflow state store to fall out of sync.
+durability is not a separate mechanism. every step checkpoints to the effect
+journal before it runs, so resuming a crashed workflow is just normal replay,
+the steps that finished hand back what they recorded without running again and
+execution picks up at the first one that never finished. there is no separate
+workflow state store that can drift out of sync with what happened.
 
-Loom lowers to Canon. A workflow becomes a function returning `Result`, its
-steps become nested matches, and its retries are unrolled rather than looped --
-which keeps every workflow total, and keeps the number of times an external
-system can be called a fact visible in the source.
+it lowers to canon. a workflow becomes a function returning `Result`, steps
+become nested matches, and retries get unrolled rather than looped, which keeps
+every workflow total and keeps the number of times you can hit an external
+system something you can read in the source.
 """
 
 from __future__ import annotations

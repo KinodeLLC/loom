@@ -1,12 +1,12 @@
 """
-Loom: a durable workflow language.
+loom, a durable workflow language.
 
-Steps declare their own compensation, and checkpoint to the effect journal
-before they run -- so unwinding is explicit in the generated code and
-resumption is the Ledger's ordinary replay rather than a separate state store.
+steps say how to undo themselves and checkpoint to the effect journal before
+they run, so the unwinding is written into the generated code and resuming a
+crashed workflow is just normal replay instead of a separate state store.
 
-Lowers to Canon, so verification, capability analysis and promotion apply
-unchanged.
+lowers to canon so verification and capability analysis and promotion all work
+on it already.
 """
 
 __version__ = "0.1.0"

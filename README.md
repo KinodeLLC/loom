@@ -1,17 +1,17 @@
 # Loom
 
-A durable workflow language. Compensation sits next to the step it undoes, and
-resumption is journal replay rather than a separate state store.
+durable workflows. the compensation for a step sits next to the step, and
+resuming a crashed workflow is replay off the journal.
 
-Part of the [Kinode](../kinode-stack) stack. Lowers to [Canon](../canon).
+part of [kinode](../kinode-stack). lowers to [canon](../canon).
 
-## Install
+## install
 
 ```sh
 pip install -e .
 ```
 
-## A workflow
+## example
 
 ```loom
 module fulfilment
@@ -40,74 +40,82 @@ workflow originate(request: LoanRequest, applicant: Applicant)
 }
 ```
 
-## Why it is shaped this way
+## compensation
 
-**Compensation is emitted explicitly.** The unwinding for every failure point
-is written into the generated Canon rather than driven by a runtime stack — so
-it is visible in the code and in the journal before it ever runs, and
-provably runs in reverse order:
+when a step fails every step before it gets undone in reverse order, and the
+code that does the undoing gets written into the generated canon when you
+compile, so you can read exactly what will happen for every failure point
+before you run anything. with a runtime stack you only find out during an
+actual failure
 
 ```
 ok  a failed settlement reverses the staged booking:
     settlement failed, staged entry reversed, customer not notified
 ```
 
-**Durability reuses the Ledger.** Each step checkpoints to the effect journal
-before running, so resuming a crashed workflow is ordinary replay — completed
-steps return their recorded results without being performed again:
+`on_failure continue` on a step means do not unwind what came before it, so a
+confirmation email that fails does not reverse a loan you already settled
+
+## resumption
+
+every step writes a checkpoint before it runs, so resuming a crashed workflow
+is just replay. the steps that already finished hand back what they recorded
+instead of running again, and you pick up at the first one that never finished
 
 ```
 ok  an interrupted origination resumes without re-billing the bureau:
     replayed 8 journal entries, no external call repeated, identical offer
 ```
 
-There is no workflow state store that can fall out of sync with what actually
-happened.
+there is no separate state store for any of this so there is nothing that can
+get out of sync with what actually happened
 
-**Retries are unrolled, not looped.** This keeps every workflow total and keeps
-the number of times an external system can be called a fact visible in the
-source. Bounded at 8; each attempt checkpoints with its attempt number.
+## retries
 
-## Step forms
+unrolled, not looped, so every workflow stays total and the number of times you
+can hit an external system is something you can read in the source. capped at
+8, and every attempt checkpoints with its attempt number on it
 
-| Form | Effect |
+## step forms
+
+| form | what it does |
 | --- | --- |
-| `step name = expr` | Names the step and binds its value |
-| `step name: expr` | Names the step without binding |
-| `step expr` | Derives a name from the expression |
+| `step name = expr` | names the step and binds the value |
+| `step name: expr` | names it, no binding |
+| `step expr` | derives a name off the expression |
 
-Modifiers: `compensate <expr>`, `retry N`, `on_failure continue` / `abort`.
+modifiers are `compensate <expr>`, `retry N`, and `on_failure continue` or
+`abort`. you also get `await <signal> deadline N`, `timer N`, and normal `let`
+`do` `assert` statements
 
-Also available: `await <signal> deadline N`, `timer N`, and ordinary `let`,
-`do` and `assert` statements.
+step expressions return `Result` and so does the workflow, since that is what
+carries the failure back out
 
-Step expressions must return `Result`; the workflow's result type must be
-`Result` too, since that is what carries the failure.
+## runtime
 
-## Runtime
-
-Loom supplies its own effect handlers rather than the Ledger knowing about
-workflows:
+loom brings its own handlers, the journal does not know anything about
+workflows
 
 ```python
 import loom
 from canon.ledger import Ledger
 
 led = Ledger(...)
-loom.install(led)                    # workflow.checkpoint, compensated, sleep, await_signal
+loom.install(led)
 trace = loom.trace_of(led)
-print(trace.steps_started())         # ['credit_file', 'booking', 'settlement']
+print(trace.steps_started())   # ['credit_file', 'booking', 'settlement']
 ```
 
-A Ledger with no workflow handlers refuses the checkpoint rather than silently
-running a workflow with no durability.
+if you skip `loom.install` it errors on the first checkpoint. that is on
+purpose, you would rather that than a workflow that looks like it is running
+and is not recording anything
 
-## Tests
+## tests
 
 ```sh
 python tests/smoke_loom.py
 ```
 
-## Licence
+## licence
 
-Apache-2.0. Copyright Kinode.
+Apache-2.0, Kinode.
