@@ -3,7 +3,7 @@
 durable workflows. the compensation for a step sits next to the step, and
 resuming a crashed workflow is replay off the journal.
 
-part of [kinode](../kinode-stack). lowers to [canon](../canon).
+part of [kinode](https://github.com/KinodeLLC/kinode-stack). lowers to [canon](https://github.com/KinodeLLC/canon).
 
 ## install
 

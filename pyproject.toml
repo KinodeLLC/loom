@@ -22,8 +22,8 @@ classifiers = [
 dependencies = ["canon>=0.1.0"]
 
 [project.urls]
-Homepage = "https://github.com/ExposingTheBadge/loom"
-Changelog = "https://github.com/ExposingTheBadge/loom/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/KinodeLLC/loom"
+Changelog = "https://github.com/KinodeLLC/loom/blob/main/CHANGELOG.md"
 
 [project.scripts]
 loom = "loom.cli:main"
